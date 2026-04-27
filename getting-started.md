@@ -354,9 +354,87 @@ https://admin.你的域名
 
 ---
 
-## 九、常见问题排查
+## 九、（可选但强烈推荐）配置 Portainer API 启用一键升级
 
-### 9.1 Portainer 5 分钟超时锁定
+> 完成本章后，未来发布新版本时你只需在后台点 **"立即检查 → 一键升级"** 即可自动拉新镜像、重启容器，**不用再 SSH 改 docker-compose.yml**。
+> 跳过本章不影响日常使用，但升级时必须手动 update stack。
+
+### 9.1 在 Portainer 创建 API Token
+
+1. 浏览器打开 **`https://你的服务器IP:9443`**（点"高级 → 继续访问"跳过自签证书警告）
+2. 用之前设置的 admin 账号登录
+3. **右上角点用户头像** → **My account**
+4. 滚到下方 **Access tokens** 区域 → 点 **Add access token**
+5. 字段填写：
+   - **Current password**：你的 Portainer admin 密码
+   - **Description**：`bangnicms-upgrade`（任意标识用途）
+6. 点 **Add access token** → **复制弹出的 token**（形如 `ptr_xxxxxxxxxxxxxxxxxxxxxxxxxx=`）
+
+> ⚠️ **token 只显示一次**！立刻复制保存到本地。如果不小心关闭，回到 Access tokens 列表删除旧的、重新创建。
+
+### 9.2 查询 Endpoint ID 和 Stack ID
+
+**Endpoint ID**：
+1. Portainer 左侧菜单 **Environments** → 点你的 local 环境
+2. URL 末尾的数字就是 Endpoint ID，例如 `/#!/3/docker/dashboard` → **Endpoint ID = 3**
+
+**Stack ID**：
+1. Portainer 左侧菜单 **Stacks** → 点 **bangnicms** 这一行进入
+2. URL 末尾形如 `/#!/3/docker/stacks/bangnicms?id=1` → **Stack ID = 1**
+
+> 💡 全新部署的服务器：Endpoint ID 通常是 **3**，Stack ID 通常是 **1**。
+
+### 9.3 在 BangNiCMS 后台填写 Portainer 配置
+
+打开 **`https://admin.你的域名/upgrade`** → 切到 **高级设置** tab → 找到 **Portainer 集成** 区域，按下表填写：
+
+| 字段 | 填什么 | 示例 |
+|---|---|---|
+| **Portainer URL** | ⚠️ 必须用 **`http://172.17.0.1:9000`**（Docker 网桥 host gateway + Portainer HTTP 端口） | `http://172.17.0.1:9000` |
+| **API Key** | 9.1 步复制的完整 token | `ptr_8Y9wSP1QFYm0sZxAYTetAdJ0JAqEisrr/S16EIYxVec=` |
+| **Stack ID** | 9.2 步查到的数字 | `1` |
+| **Endpoint ID** | 9.2 步查到的数字 | `3` |
+| **启用 Portainer 升级** | 打开开关 | ✅ |
+
+> ⚠️ **为什么 Portainer URL 不能填 `https://你的IP:9443`？**
+> server 容器内的 Node.js fetch 默认拒绝自签证书，而 Portainer CE 默认就是自签证书。改用 Portainer 在 9000 端口暴露的 HTTP 接口（`172.17.0.1` 是 Docker 默认网桥的 host gateway，server 容器一定能通），既绕过证书问题，又不依赖公网 IP。
+
+### 9.4 同时修正"更新来源与行为"区域
+
+由于本项目镜像发布在 **GitHub Container Registry**（不是 Docker Hub）+ 仓库名是 `BangNiCMS`，必须改 3 个字段：
+
+| 字段 | 改成 |
+|---|---|
+| **Docker 镜像前缀** | `ghcr.io/miaochi998/bangnicms` |
+| **GitHub Owner**（拿 release notes 用） | `miaochi998` |
+| **GitHub Repo** | `BangNiCMS` |
+
+### 9.5 保存并测试连接
+
+1. 滚到底部点 **保存设置** → 出现 **✓ 已保存**
+2. 滚到上方 **健康状态** 区域 → portainer 项应显示 ✅ **`连接成功：stack bangnicms`**
+
+如果显示 ❌ `fetch failed` 或 `配置不完整`：
+- 检查 Portainer URL 是不是 `http://172.17.0.1:9000`（不要写 `https://` 也不要写 `localhost`）
+- 检查 API Key 是否复制完整（含末尾的 `=`）
+- 检查 Stack ID / Endpoint ID 是不是数字（在 Portainer URL 里再确认一遍）
+
+### 9.6 已知限制
+
+当前 0.2.x 版本的"一键升级"功能存在已知限制（下个版本修复）：
+- "立即检查更新"按钮调的是 Docker Hub API，但项目镜像在 GHCR，所以**永远显示无新版本**
+- 升级流程需要重 build 后才完整可用
+
+**当前期间手动升级方法**：
+1. SSH 上服务器或在 Portainer 里编辑 stack
+2. 把 docker-compose.yml 里 3 个 `:0.2.2` 改成新版本号（如 `:0.2.3`）
+3. Update the stack → 勾选 "Re-pull image and redeploy"
+
+---
+
+## 十、常见问题排查
+
+### 10.1 Portainer 5 分钟超时锁定
 
 显示 `Instance timed out for security purposes`。
 
@@ -374,7 +452,7 @@ docker run -d --name portainer --restart=unless-stopped \
 
 然后 **5 分钟内**重新打开 Portainer 创建账号。
 
-### 9.2 Caddy 申请证书失败
+### 10.2 Caddy 申请证书失败
 
 **根因 1**：DNS 没生效 → 等 5~30 分钟后重启 caddy 容器（Portainer → Containers → bangnicms-caddy → Restart）
 
@@ -382,7 +460,7 @@ docker run -d --name portainer --restart=unless-stopped \
 
 **根因 3**：Let's Encrypt 限流（同域名 1 周内申请超过 5 次失败）→ 等 1 周或换域名
 
-### 9.3 镜像拉取慢 / 拉取失败
+### 10.3 镜像拉取慢 / 拉取失败
 
 国内服务器走 ghcr.io 偶尔慢。如果 6 分钟过去还在 "downloading"，**强制改用国内代理**：
 
@@ -392,7 +470,7 @@ ghcr.nju.edu.cn/miaochi998/bangnicms-*
 ```
 （南京大学镜像代理）然后 Stacks → Update。
 
-### 9.4 后台访问 502 Bad Gateway
+### 10.4 后台访问 502 Bad Gateway
 
 server 容器还没启动完。等 1~2 分钟刷新。如果一直 502：
 
@@ -402,7 +480,7 @@ docker logs bangnicms-server --tail 100
 
 把错误日志发到 GitHub Issue。
 
-### 9.5 忘记安装向导设置的超管密码
+### 10.5 忘记安装向导设置的超管密码
 
 ```bash
 docker exec -it bangnicms-postgres psql -U bangnicms -d bangnicms \
@@ -411,7 +489,7 @@ docker exec -it bangnicms-postgres psql -U bangnicms -d bangnicms \
 
 然后访问 `https://admin.你的域名/forgot-password` 重置。
 
-### 9.6 想完全重新部署（清空所有数据）
+### 10.6 想完全重新部署（清空所有数据）
 
 ```bash
 docker compose -p bangnicms down -v
@@ -422,7 +500,7 @@ rm -rf /opt/bangnicms/data
 
 ---
 
-## 十、获取帮助
+## 十一、获取帮助
 
 - **GitHub Issues**：<https://github.com/miaochi998/bncms-deploy/issues>
 - **官方部署文档**：<https://github.com/miaochi998/bncms-deploy>

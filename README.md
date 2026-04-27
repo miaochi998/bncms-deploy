@@ -7,7 +7,7 @@
 
 > **业务源代码**位于私有仓库 `miaochi998/BangNiCMS`，**镜像**已发布到 GHCR 公开仓库 `ghcr.io/miaochi998/bangnicms-{server,web,admin}`。
 
-## 🚀 部署只需 8 步
+## 🚀 部署只需 9 步
 
 完整图文教程见 **[getting-started.md](getting-started.md)**。
 
@@ -27,6 +27,7 @@
 6. **填 5 个环境变量**（DOMAIN / ADMIN_EMAIL / 3 个密钥）
 7. **Deploy**，等 6 个容器全 healthy
 8. **浏览器访问域名** → 走安装向导 → 完成
+9. **（可选）配置 Portainer API**（admin 后台 → 系统升级 → 高级设置）→ 启用一键升级。详见 [getting-started.md 第九章](getting-started.md#九可选但强烈推荐配置-portainer-api-启用一键升级)。
 
 ## 📁 仓库结构
 
