@@ -419,15 +419,16 @@ https://admin.你的域名
 - 检查 API Key 是否复制完整（含末尾的 `=`）
 - 检查 Stack ID / Endpoint ID 是不是数字（在 Portainer URL 里再确认一遍）
 
-### 9.6 已知限制
+### 9.6 升级方式
 
-当前 0.2.x 版本的"一键升级"功能存在已知限制（下个版本修复）：
-- "立即检查更新"按钮调的是 Docker Hub API，但项目镜像在 GHCR，所以**永远显示无新版本**
-- 升级流程需要重 build 后才完整可用
+**自动升级（推荐，0.2.4+）**：
+1. 在 BangNiCMS 后台 → 系统升级 → 点「立即检查更新」
+2. 若有新版本会显示版本号 + Release Notes，点「执行升级」
+3. Portainer 自动 re-pull 三个镜像并重启 stack（约 1-3 分钟）
 
-**当前期间手动升级方法**：
+**手动升级（备用方案）**：
 1. SSH 上服务器或在 Portainer 里编辑 stack
-2. 把 docker-compose.yml 里 3 个 `:0.2.2` 改成新版本号（如 `:0.2.3`）
+2. 把 docker-compose.yml 里 3 个 `:0.2.4` 改成目标版本号（如 `:0.2.5`）
 3. Update the stack → 勾选 "Re-pull image and redeploy"
 
 ---
