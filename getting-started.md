@@ -131,23 +131,27 @@ ssh root@你的服务器IP
 
 ## 三、运行初始化脚本
 
-**复制下面这条命令粘贴到 SSH 窗口，回车执行**：
-
-#### 海外服务器（推荐）：
+**复制下面 3 条命令依次粘贴到 SSH 窗口执行**：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/init-server.sh | bash
+# 1) 下载脚本
+curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/init-server.sh -o /tmp/init.sh
+
+# 2) 后台运行（apt upgrade 时 sshd 会重启导致 SSH 断连，必须用 nohup 守护）
+#    海外服务器：
+nohup bash /tmp/init.sh </dev/null >/tmp/bncms-init.log 2>&1 &
+#    国内服务器（自动配 Docker 镜像加速器，二选一）：
+# nohup bash /tmp/init.sh --mirror=cn </dev/null >/tmp/bncms-init.log 2>&1 &
+
+# 3) 实时查看进度（看到 "🎉 服务器初始化完成" 后按 Ctrl+C 退出 tail）
+tail -f /tmp/bncms-init.log
 ```
 
-#### 国内服务器（自动配 Docker 镜像加速）：
+> 💡 **为什么要用 nohup？**  apt upgrade 升级 openssh-server 时会重启 sshd，**SSH 连接会被断开**。用 `nohup` 后台运行，即使 SSH 断了脚本也会继续跑。SSH 断开后重连，再 `tail -f /tmp/bncms-init.log` 看进度即可。
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/init-server.sh | bash -s -- --mirror=cn
-```
+### 脚本会做 3 件事（约 2~5 分钟）
 
-### 脚本会做 3 件事（约 3~5 分钟）
-
-1. **升级系统软件包**（apt update + upgrade）
+1. **升级系统软件包**（停用 unattended-upgrades + apt upgrade）
 2. **安装 Docker**（官方 get.docker.com 脚本）
 3. **配置防火墙**（ufw 放行 22 / 80 / 443 / 9443）+ **创建数据目录** `/opt/bangnicms/data` + **启动 Portainer CE**
 
@@ -430,11 +434,13 @@ rm -rf /opt/bangnicms/data
 ## 附录 A：完整命令速查
 
 ```bash
-# === 服务器初始化（一次性）===
-curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/init-server.sh | bash
+# === 服务器初始化（一次性，nohup 后台跑避免 sshd 重启断连）===
+curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/init-server.sh -o /tmp/init.sh
+nohup bash /tmp/init.sh </dev/null >/tmp/bncms-init.log 2>&1 &
+tail -f /tmp/bncms-init.log
 
 # === 国内服务器初始化 ===
-curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/init-server.sh | bash -s -- --mirror=cn
+nohup bash /tmp/init.sh --mirror=cn </dev/null >/tmp/bncms-init.log 2>&1 &
 
 # === 生成 3 个密钥 ===
 echo "POSTGRES_PASSWORD = $(openssl rand -hex 24)"

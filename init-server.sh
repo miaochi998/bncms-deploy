@@ -8,15 +8,23 @@
 #   3) 启动 Portainer CE（容器管理面板）
 #
 # 用法（在新购买的 Ubuntu 22.04 服务器上 SSH 执行一次即可）：
-#   curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/init-server.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/init-server.sh -o /tmp/init.sh
+#   nohup bash /tmp/init.sh </dev/null >/tmp/bncms-init.log 2>&1 &
+#   tail -f /tmp/bncms-init.log
+#   # 看到 "🎉 服务器初始化完成" 后 Ctrl+C 退出 tail
 #
-# 国内服务器（自动配 Docker 镜像加速）：
-#   curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/init-server.sh | bash -s -- --mirror=cn
+# 国内服务器（自动配 Docker 镜像加速），把最后一行 nohup 命令改为：
+#   nohup bash /tmp/init.sh --mirror=cn </dev/null >/tmp/bncms-init.log 2>&1 &
+#
+# 为何用 nohup？apt upgrade 时 sshd 会重启导致 SSH 断开，nohup 防止脚本被 SIGHUP 杀掉。
 #
 # 完成后：浏览器打开 https://你的服务器IP:9443 → 5 分钟内创建 admin 账号
 # ============================================================
 
 set -euo pipefail
+
+# 忽略 SIGHUP，避免 apt upgrade 重启 sshd 时脚本被杀
+trap '' HUP
 
 MIRROR_MODE="default"
 for arg in "$@"; do
@@ -41,14 +49,34 @@ if ! grep -qi 'ubuntu' /etc/os-release 2>/dev/null; then
   exit 1
 fi
 
-log "BangNiCMS 服务器初始化 v2.0"
+log "BangNiCMS 服务器初始化 v2.1"
 log "操作系统：$(grep PRETTY_NAME /etc/os-release | cut -d= -f2 | tr -d '\"')"
 
 # ============================================================
 # 2) 升级系统（apt update + upgrade）
 # ============================================================
-log "[1/3] 升级系统软件包（约 1~3 分钟）..."
+log "[1/3] 升级系统软件包（约 2~5 分钟）..."
 export DEBIAN_FRONTEND=noninteractive
+
+# 停掉 Ubuntu 新机自带的 unattended-upgrades，避免和我们抢 dpkg 锁
+log "  停用 unattended-upgrades 服务避免抢锁..."
+systemctl stop unattended-upgrades.service apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
+systemctl disable unattended-upgrades.service apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+
+# 等待已经在跑的 apt/dpkg 进程结束（最多 10 分钟）
+log "  等待已有 apt/dpkg 进程结束（首次开机时系统会自动跑后台升级）..."
+for i in $(seq 1 60); do
+  if ! fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 && ! fuser /var/lib/apt/lists/lock >/dev/null 2>&1; then
+    break
+  fi
+  if [ $i -eq 60 ]; then
+    err "等待 dpkg 锁超时（10 分钟），请手动检查：ps aux | grep apt"
+    exit 1
+  fi
+  sleep 10
+done
+log "  dpkg 锁已释放，开始升级"
+
 apt-get update -qq
 apt-get upgrade -y -qq -o Dpkg::Options::="--force-confold"
 apt-get install -y -qq curl ca-certificates ufw

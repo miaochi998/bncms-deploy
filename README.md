@@ -17,8 +17,11 @@
 2. **SSH 登录服务器**
 3. **运行初始化脚本**（升级系统 + 装 Docker + 启动 Portainer，约 3 分钟）：
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/init-server.sh | bash
+   curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/init-server.sh -o /tmp/init.sh
+   nohup bash /tmp/init.sh </dev/null >/tmp/bncms-init.log 2>&1 &
+   tail -f /tmp/bncms-init.log
    ```
+   > 必须用 `nohup` 后台运行，因为 apt upgrade 时 sshd 会重启导致 SSH 断连。
 4. **浏览器打开 Portainer**（`https://你的IP:9443`）→ 设置 admin 账号
 5. **创建 Stack**：复制本仓库 [docker-compose.yml](docker-compose.yml) 内容 → Portainer Stacks → Add stack → Web editor 粘贴
 6. **填 5 个环境变量**（DOMAIN / ADMIN_EMAIL / 3 个密钥）
