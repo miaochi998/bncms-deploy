@@ -23,7 +23,7 @@ services:
     environment:
       POSTGRES_DB: bangnicms
       POSTGRES_USER: bangnicms
-      POSTGRES_PASSWORD: ${BANGNICMS_POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${BANGNICMS_POSTGRES_PASSWORD:?BANGNICMS_POSTGRES_PASSWORD 未填或为空，请在 Portainer Environment variables 区域填入 openssl rand -hex 24 生成的密钥}
     volumes:
       - /opt/bangnicms/data/postgres:/var/lib/postgresql/data
     healthcheck:
@@ -64,21 +64,21 @@ services:
       BANGNICMS_GIT_SHA: "v0.2.4"
       BANGNICMS_BUILD_TIME: "production"
       BANGNICMS_SERVER_PORT: 6530
-      BANGNICMS_DATABASE_URL: postgresql://bangnicms:${BANGNICMS_POSTGRES_PASSWORD}@postgres:5432/bangnicms?schema=public
+      BANGNICMS_DATABASE_URL: postgresql://bangnicms:${BANGNICMS_POSTGRES_PASSWORD:?需要填 BANGNICMS_POSTGRES_PASSWORD}@postgres:5432/bangnicms?schema=public
       BANGNICMS_SHADOW_DATABASE_URL: postgresql://bangnicms:${BANGNICMS_POSTGRES_PASSWORD}@postgres:5432/bangnicms_shadow?schema=public
       BANGNICMS_REDIS_URL: redis://redis:6379
       BANGNICMS_STORAGE_ROOT: /data
       BANGNICMS_API_BASE_PATH: /api
       BANGNICMS_API_VERSION_SEGMENT: "2026-04"
-      BANGNICMS_PUBLIC_API_ORIGIN: https://${DOMAIN}
+      BANGNICMS_PUBLIC_API_ORIGIN: https://${DOMAIN:?DOMAIN 未填或为空，请在 Portainer Environment variables 区域填入你的域名（不带 https:// 不带 www，例 mysite.com）}
       BANGNICMS_PUBLIC_WEB_ORIGIN: https://${DOMAIN}
       BANGNICMS_PUBLIC_ADMIN_ORIGIN: https://admin.${DOMAIN}
       BANGNICMS_SITE_NAME: BangNiCMS
       BANGNICMS_SITE_HOST: ${DOMAIN}
       BANGNICMS_DEFAULT_LANGUAGE_CODE: zh-CN
       BANGNICMS_URL_STRATEGY: locale-prefix
-      BANGNICMS_JWT_SECRET: ${BANGNICMS_JWT_SECRET}
-      BANGNICMS_REVALIDATE_SECRET: ${BANGNICMS_REVALIDATE_SECRET}
+      BANGNICMS_JWT_SECRET: ${BANGNICMS_JWT_SECRET:?BANGNICMS_JWT_SECRET 未填或为空，请在 Portainer Environment variables 区域填入 openssl rand -hex 24 生成的密钥}
+      BANGNICMS_REVALIDATE_SECRET: ${BANGNICMS_REVALIDATE_SECRET:?BANGNICMS_REVALIDATE_SECRET 未填或为空，请在 Portainer Environment variables 区域填入 openssl rand -hex 24 生成的密钥}
       BANGNICMS_PG_DUMP_BIN: pg_dump
       BANGNICMS_PG_RESTORE_BIN: pg_restore
     volumes:
@@ -157,7 +157,7 @@ services:
       - "443:443/udp"
     environment:
       DOMAIN: ${DOMAIN}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL 未填或为空，请在 Portainer Environment variables 区域填入用于 Let's Encrypt 证书续期通知的邮箱}
     volumes:
       - /opt/bangnicms/data/caddy/data:/data
       - /opt/bangnicms/data/caddy/config:/config
