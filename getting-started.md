@@ -244,20 +244,22 @@ https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/docker-compose.ym
 回到 SSH 窗口，**执行下面 3 条命令各一次**，每次输出一串 48 位随机字符串：
 
 ```bash
-echo "POSTGRES_PASSWORD = $(openssl rand -hex 24)"
-echo "JWT_SECRET = $(openssl rand -hex 24)"
-echo "REVALIDATE_SECRET = $(openssl rand -hex 24)"
+echo "BANGNICMS_POSTGRES_PASSWORD = $(openssl rand -hex 24)"
+echo "BANGNICMS_JWT_SECRET = $(openssl rand -hex 24)"
+echo "BANGNICMS_REVALIDATE_SECRET = $(openssl rand -hex 24)"
 ```
 
 输出示例：
 
 ```
-POSTGRES_PASSWORD = 2c4f...（48 位）
-JWT_SECRET = 8a9b...（48 位）
-REVALIDATE_SECRET = e1f2...（48 位）
+BANGNICMS_POSTGRES_PASSWORD = 2c4f...（48 位）
+BANGNICMS_JWT_SECRET = 8a9b...（48 位）
+BANGNICMS_REVALIDATE_SECRET = e1f2...（48 位）
 ```
 
 **立即把这 3 行复制到密码管理器或备忘录**。丢了需要重置数据库、业务数据会丢失！
+
+> ⚠️ 变量名前缀必须是 `BANGNICMS_`，下一步在 Portainer 表单里填的 Name 必须**完全一致**。
 
 ### 6.2 在 Portainer 表单底部填环境变量
 
@@ -522,9 +524,9 @@ tail -f /tmp/bncms-init.log
 nohup bash /tmp/init.sh --mirror=cn </dev/null >/tmp/bncms-init.log 2>&1 &
 
 # === 生成 3 个密钥 ===
-echo "POSTGRES_PASSWORD = $(openssl rand -hex 24)"
-echo "JWT_SECRET = $(openssl rand -hex 24)"
-echo "REVALIDATE_SECRET = $(openssl rand -hex 24)"
+echo "BANGNICMS_POSTGRES_PASSWORD = $(openssl rand -hex 24)"
+echo "BANGNICMS_JWT_SECRET = $(openssl rand -hex 24)"
+echo "BANGNICMS_REVALIDATE_SECRET = $(openssl rand -hex 24)"
 
 # === 查看容器状态 ===
 docker ps
