@@ -548,8 +548,10 @@ cat backup-20260427.sql | docker exec -i bangnicms-postgres psql -U bangnicms ba
 
 ## 附录 B：版本对应表
 
-| 文档版本 | BangNiCMS 版本 | docker-compose.yml 默认镜像 tag |
-|---|---|---|
-| v2.0（当前）| 0.2.2 | `:0.2.2` |
+| 文档版本 | BangNiCMS 版本 | docker-compose.yml 默认镜像 tag | 关键修复 |
+|---|---|---|---|
+| v2.0 | 0.2.2 | `:0.2.2` | 首版部署文档 |
+| v2.1 | 0.2.3 | `:0.2.3` | init-server.sh SIGHUP 防护 + Portainer API 一键升级配置章节 |
+| v2.2（当前）| 0.2.4 | `:0.2.4` | 升级模块从 Docker Hub 迁到 GHCR，「立即检查更新」真正可用 |
 
-升级到新版本：修改 `docker-compose.yml` 里所有 `:0.2.2` → 新版本号，然后 Portainer Stack 点 **Update** 即可。
+升级到新版本（0.2.4+）：直接在 BangNiCMS 后台 → 系统升级 → 点「立即检查更新」→ 「执行升级」即可，无需手动编辑 docker-compose.yml。
