@@ -1,0 +1,247 @@
+# ============================================================
+# BangNiCMS 完整部署 docker-compose.yml
+# ------------------------------------------------------------
+# 用法：
+#   1. 复制本文件全部内容
+#   2. Portainer → Stacks → Add stack → Web editor 粘贴
+#   3. 在下方 Environment variables 区域填入 5 个变量：
+#        DOMAIN
+#        ADMIN_EMAIL
+#        BANGNICMS_POSTGRES_PASSWORD
+#        BANGNICMS_JWT_SECRET
+#        BANGNICMS_REVALIDATE_SECRET
+#   4. 点 Deploy the stack
+# ------------------------------------------------------------
+# 如需升级到新版本：把所有 ":0.2.2" 改成新版本号即可
+# ============================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bangnicms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bangnicms
+      POSTGRES_USER: bangnicms
+      POSTGRES_PASSWORD: ${BANGNICMS_POSTGRES_PASSWORD}
+    volumes:
+      - /opt/bangnicms/data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bangnicms"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - bangnicms-internal
+
+  redis:
+    image: redis:7-alpine
+    container_name: bangnicms-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - /opt/bangnicms/data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - bangnicms-internal
+
+  server:
+    image: ghcr.io/miaochi998/bangnicms-server:0.2.2
+    container_name: bangnicms-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      BANGNICMS_APP_VERSION: "0.2.2"
+      BANGNICMS_SERVER_PORT: 6530
+      BANGNICMS_DATABASE_URL: postgresql://bangnicms:${BANGNICMS_POSTGRES_PASSWORD}@postgres:5432/bangnicms?schema=public
+      BANGNICMS_SHADOW_DATABASE_URL: postgresql://bangnicms:${BANGNICMS_POSTGRES_PASSWORD}@postgres:5432/bangnicms_shadow?schema=public
+      BANGNICMS_REDIS_URL: redis://redis:6379
+      BANGNICMS_STORAGE_ROOT: /data
+      BANGNICMS_API_BASE_PATH: /api
+      BANGNICMS_API_VERSION_SEGMENT: "2026-04"
+      BANGNICMS_PUBLIC_API_ORIGIN: https://${DOMAIN}
+      BANGNICMS_PUBLIC_WEB_ORIGIN: https://${DOMAIN}
+      BANGNICMS_PUBLIC_ADMIN_ORIGIN: https://admin.${DOMAIN}
+      BANGNICMS_SITE_NAME: BangNiCMS
+      BANGNICMS_SITE_HOST: ${DOMAIN}
+      BANGNICMS_DEFAULT_LANGUAGE_CODE: zh-CN
+      BANGNICMS_URL_STRATEGY: locale-prefix
+      BANGNICMS_JWT_SECRET: ${BANGNICMS_JWT_SECRET}
+      BANGNICMS_REVALIDATE_SECRET: ${BANGNICMS_REVALIDATE_SECRET}
+      BANGNICMS_PG_DUMP_BIN: pg_dump
+      BANGNICMS_PG_RESTORE_BIN: pg_restore
+    volumes:
+      - /opt/bangnicms/data/storage:/data
+    networks:
+      - bangnicms-internal
+
+  web:
+    image: ghcr.io/miaochi998/bangnicms-web:0.2.2
+    container_name: bangnicms-web
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      NODE_ENV: production
+      BANGNICMS_APP_VERSION: "0.2.2"
+      BANGNICMS_API_BASE_PATH: /api
+      BANGNICMS_API_VERSION_SEGMENT: "2026-04"
+      BANGNICMS_PUBLIC_API_ORIGIN: https://${DOMAIN}
+      BANGNICMS_PUBLIC_WEB_ORIGIN: https://${DOMAIN}
+      BANGNICMS_PUBLIC_ADMIN_ORIGIN: https://admin.${DOMAIN}
+      BANGNICMS_DEFAULT_LANGUAGE_CODE: zh-CN
+      BANGNICMS_URL_STRATEGY: locale-prefix
+      BANGNICMS_SITE_NAME: BangNiCMS
+      BANGNICMS_SITE_HOST: ${DOMAIN}
+      BANGNICMS_REVALIDATE_SECRET: ${BANGNICMS_REVALIDATE_SECRET}
+      NEXT_PUBLIC_BANGNICMS_API_ORIGIN: https://${DOMAIN}
+      NEXT_PUBLIC_BANGNICMS_API_BASE_PATH: /api
+      NEXT_PUBLIC_BANGNICMS_API_VERSION_SEGMENT: "2026-04"
+    networks:
+      - bangnicms-internal
+
+  admin:
+    image: ghcr.io/miaochi998/bangnicms-admin:0.2.2
+    container_name: bangnicms-admin
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      NODE_ENV: production
+      BANGNICMS_APP_VERSION: "0.2.2"
+      BANGNICMS_API_BASE_PATH: /api
+      BANGNICMS_API_VERSION_SEGMENT: "2026-04"
+      BANGNICMS_PUBLIC_API_ORIGIN: https://${DOMAIN}
+      BANGNICMS_PUBLIC_WEB_ORIGIN: https://${DOMAIN}
+      BANGNICMS_PUBLIC_ADMIN_ORIGIN: https://admin.${DOMAIN}
+      BANGNICMS_DEFAULT_LANGUAGE_CODE: zh-CN
+      BANGNICMS_URL_STRATEGY: locale-prefix
+      BANGNICMS_SITE_NAME: BangNiCMS
+      BANGNICMS_SITE_HOST: ${DOMAIN}
+      NEXT_PUBLIC_BANGNICMS_API_ORIGIN: https://${DOMAIN}
+      NEXT_PUBLIC_BANGNICMS_API_BASE_PATH: /api
+      NEXT_PUBLIC_BANGNICMS_API_VERSION_SEGMENT: "2026-04"
+    networks:
+      - bangnicms-internal
+
+  # ============================================================
+  # Caddy 反向代理 + 自动 HTTPS
+  # Caddyfile 内容直接内嵌在 command 里，无需外部文件
+  # ============================================================
+  caddy:
+    image: caddy:2-alpine
+    container_name: bangnicms-caddy
+    restart: unless-stopped
+    depends_on:
+      - server
+      - web
+      - admin
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+    volumes:
+      - /opt/bangnicms/data/caddy/data:/data
+      - /opt/bangnicms/data/caddy/config:/config
+      - /opt/bangnicms/data/caddy/logs:/var/log/caddy
+    command:
+      - sh
+      - -c
+      - |
+        cat > /etc/caddy/Caddyfile <<'CADDYFILE_EOF'
+        # 主站：前台 + API
+        {$$DOMAIN} {
+            tls {$$ADMIN_EMAIL}
+
+            handle /uploads/* {
+                reverse_proxy server:6530
+            }
+            handle /api/* {
+                reverse_proxy server:6530
+            }
+            handle /health {
+                reverse_proxy server:6530
+            }
+            handle /install/* {
+                reverse_proxy server:6530
+            }
+            handle {
+                reverse_proxy web:6532
+            }
+
+            encode gzip zstd
+
+            header {
+                X-Content-Type-Options nosniff
+                X-Frame-Options SAMEORIGIN
+                Referrer-Policy strict-origin-when-cross-origin
+            }
+
+            log {
+                output file /var/log/caddy/main.access.log {
+                    roll_size 100mb
+                    roll_keep 10
+                }
+                format json
+            }
+        }
+
+        # 后台（子域名）
+        admin.{$$DOMAIN} {
+            tls {$$ADMIN_EMAIL}
+
+            handle /api/* {
+                reverse_proxy server:6530
+            }
+            handle /uploads/* {
+                reverse_proxy server:6530
+            }
+            handle /health {
+                reverse_proxy server:6530
+            }
+            handle /install/* {
+                reverse_proxy server:6530
+            }
+            handle {
+                reverse_proxy admin:6534
+            }
+
+            encode gzip zstd
+
+            header {
+                X-Content-Type-Options nosniff
+                X-Frame-Options DENY
+                Referrer-Policy same-origin
+            }
+
+            log {
+                output file /var/log/caddy/admin.access.log {
+                    roll_size 100mb
+                    roll_keep 10
+                }
+                format json
+            }
+        }
+        CADDYFILE_EOF
+        exec caddy run --config /etc/caddy/Caddyfile
+    networks:
+      - bangnicms-internal
+      - bangnicms-external
+
+networks:
+  bangnicms-internal:
+    driver: bridge
+  bangnicms-external:
+    driver: bridge

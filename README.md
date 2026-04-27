@@ -1,77 +1,59 @@
 # BangNiCMS · 部署文件公开仓库
 
-[![Release](https://img.shields.io/github/v/release/miaochi998/bncms-deploy)](https://github.com/miaochi998/bncms-deploy/releases)
+[![Deploy](https://img.shields.io/badge/deploy-docker--compose-blue)](docker-compose.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-本仓库存放 **BangNiCMS** 的**部署相关公开文件**：一键安装脚本、Portainer 应用模板、Docker Compose 配置等。
+本仓库存放 **BangNiCMS** 部署所需的公开文件（脚本 / Compose / 文档）。
 
-> **业务源代码**位于私有仓库 `miaochi998/BangNiCMS`（不公开）。
-> **构建好的镜像**已发布到 GHCR 公开镜像仓库：`ghcr.io/miaochi998/bangnicms-server / -web / -admin`。
+> **业务源代码**位于私有仓库 `miaochi998/BangNiCMS`，**镜像**已发布到 GHCR 公开仓库 `ghcr.io/miaochi998/bangnicms-{server,web,admin}`。
 
-## 🚀 一键部署
+## 🚀 部署只需 8 步
 
-在你购买的全新 Ubuntu 22.04 VPS 上 SSH 登录后，运行：
+完整图文教程见 **[getting-started.md](getting-started.md)**。
 
-```bash
-# 海外服务器
-curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/install-vps.sh | bash
+简要流程：
 
-# 国内服务器（自动配 Docker 镜像加速）
-curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/install-vps.sh | bash -s -- --mirror=cn
-```
+1. **买 VPS + 域名**（Ubuntu 22.04 LTS / 4GB RAM / DNS 解析两条 A 记录）
+2. **SSH 登录服务器**
+3. **运行初始化脚本**（升级系统 + 装 Docker + 启动 Portainer，约 3 分钟）：
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/init-server.sh | bash
+   ```
+4. **浏览器打开 Portainer**（`https://你的IP:9443`）→ 设置 admin 账号
+5. **创建 Stack**：复制本仓库 [docker-compose.yml](docker-compose.yml) 内容 → Portainer Stacks → Add stack → Web editor 粘贴
+6. **填 5 个环境变量**（DOMAIN / ADMIN_EMAIL / 3 个密钥）
+7. **Deploy**，等 6 个容器全 healthy
+8. **浏览器访问域名** → 走安装向导 → 完成
 
-脚本会自动完成：
-- ✅ 安装 Docker + Compose Plugin
-- ✅ 配置防火墙（ufw）放行 80/443/9443
-- ✅ 创建数据目录 `/opt/bangnicms/data/`
-- ✅ 部署 Portainer CE 并**自动初始化 admin 账号**（不会被 5 分钟未创建账号锁死）
-- ✅ 预下载 BangNiCMS 应用模板
+## 📁 仓库结构
 
-完成后浏览器打开 `https://你的IP:9443`，按提示部署 Stack。
-
-## 📖 完整教程
-
-**首次部署强烈推荐看这份小白教程（30~60 分钟带你从 0 走到上线）**：
-
-👉 **[完整图文部署教程 →](docs/getting-started.md)**
-
-涵盖：买服务器 / 域名 → DNS → 安全组 → SSH → 一键安装 → Portainer 部署 → 网站初始化 → AI 多语言翻译 → 日常运营 → 升级备份 → 故障排查。
-
-## 📁 目录结构
+仅 4 个文件，简单透明：
 
 ```
-BangNiCMS-deploy/
-├── install-vps.sh                  # 一键安装脚本入口
-├── portainer/
-│   ├── template.json               # Portainer App Template（在 Settings → App Templates 添加）
-│   ├── logo.svg                    # 模板 Logo
-│   └── README.md                   # 模板设计说明
-├── docker/
-│   ├── docker-compose.prod.yml     # 生产部署 compose（Portainer 用）
-│   ├── generate-secrets.sh         # 生成 3 个密钥的辅助脚本
-│   └── caddy/Caddyfile             # Caddy 反向代理 + 自动 HTTPS 配置
-└── docs/
-    └── getting-started.md          # 小白完整图文教程
+bncms-deploy/
+├── README.md              你正在看
+├── init-server.sh         服务器初始化脚本（系统升级 + Docker + Portainer）
+├── docker-compose.yml     完整 Stack 定义（自包含，Caddyfile 已内联）
+└── getting-started.md     完整图文部署教程（小白可读）
 ```
 
-## 🔒 安全说明
+## 🛡️ 安全说明
 
-- 本仓库**不包含任何业务源码**，仅含部署配置
-- 三个关键密钥（POSTGRES_PASSWORD / JWT_SECRET / REVALIDATE_SECRET）由用户在部署时生成，不会出现在本仓库
-- Portainer admin 密码由 `install-vps.sh` 在用户机器上随机生成并打印到 SSH 输出
+- 本仓库**完全不含业务源码**，仅含部署配置
+- 三个关键密钥（POSTGRES_PASSWORD / JWT_SECRET / REVALIDATE_SECRET）由用户用 `openssl rand -hex 24` 自己生成，**绝不**经过本仓库
+- Portainer admin 账号由用户在浏览器 Web UI 自己创建（5 分钟内），脚本**不会**自动设置密码
 
 ## 🐛 报告问题
 
-- **部署相关 Bug**（脚本/Compose/Caddy）：在本仓库提 [Issue](https://github.com/miaochi998/bncms-deploy/issues)
-- **业务功能 Bug**（CMS 管理 / 前台展示等）：暂时也提到本仓库，我们会转交内部跟进
+- **部署 / 脚本 / Compose / Caddyfile**：在本仓库 [Issues](https://github.com/miaochi998/bncms-deploy/issues) 提
+- **业务功能 Bug**（CMS / 前台 / 后台）：暂时也提到本仓库，我们会转交内部跟进
 
 ## 📜 License
 
-MIT License。**部署配置文件可自由使用 / 修改 / 二次发行**。
+MIT License。本仓库部署配置可自由使用 / 修改 / 二次发行。
 
-业务镜像 `ghcr.io/miaochi998/bangnicms-*` 的使用受 BangNiCMS 主项目 License 约束。
+镜像 `ghcr.io/miaochi998/bangnicms-*` 的使用受 BangNiCMS 主项目 License 约束。
 
 ---
 
-**官方主页**（计划中）：`https://cms.bonnei.com`
-**业务源码**（私有）：`https://github.com/miaochi998/BangNiCMS`
+**项目主页**（计划中）：`https://cms.bonnei.com`
