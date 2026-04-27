@@ -1,0 +1,110 @@
+{
+  "version": "3",
+  "templates": [
+    {
+      "type": 3,
+      "id": 1,
+      "title": "BangNiCMS 外贸独立站",
+      "name": "bangnicms",
+      "description": "开源跨境电商 CMS · 多语言 / 自定义主题与插件 / 在线升级 / 自动备份。适合外贸企业快速搭建专业独立站。",
+      "note": "<p><b>部署前必读：</b></p><ul><li>域名 A 记录已解析到本服务器（含 admin 子域名）</li><li>云服务商安全组已放行 80 / 443</li><li>三个密钥字段建议先在 SSH 中执行 <code>bash &lt;(curl -sSL https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/docker/generate-secrets.sh)</code> 生成后粘贴</li></ul>",
+      "categories": ["CMS", "E-commerce", "Content Management"],
+      "platform": "linux",
+      "logo": "https://raw.githubusercontent.com/miaochi998/bncms-deploy/main/portainer/logo.svg",
+      "repository": {
+        "url": "https://github.com/miaochi998/bncms-deploy",
+        "stackfile": "docker/docker-compose.prod.yml"
+      },
+      "env": [
+        {
+          "name": "DOMAIN",
+          "label": "站点域名（必填）",
+          "description": "例如 example.com（不含 https://）。请确保域名 A 记录已指向本服务器；admin 子域名（admin.example.com）也需要解析。"
+        },
+        {
+          "name": "ADMIN_EMAIL",
+          "label": "管理员邮箱（必填）",
+          "description": "用于 Let's Encrypt 证书申请与到期通知"
+        },
+        {
+          "name": "BANGNICMS_POSTGRES_PASSWORD",
+          "label": "数据库密码（必填）",
+          "description": "⚠️ 32 字符随机字符串。建议先在 SSH 执行 generate-secrets.sh 生成。首次部署后请勿修改，否则数据库无法访问。"
+        },
+        {
+          "name": "BANGNICMS_JWT_SECRET",
+          "label": "JWT 密钥（必填）",
+          "description": "⚠️ 32 字符随机字符串。用于用户登录会话加密。可与上面同时生成。"
+        },
+        {
+          "name": "BANGNICMS_REVALIDATE_SECRET",
+          "label": "缓存失效密钥（必填）",
+          "description": "⚠️ 32 字符随机字符串。用于后台数据变更后通知前台刷新缓存。"
+        },
+        {
+          "name": "APP_VERSION",
+          "label": "版本策略",
+          "description": "选择升级策略：保守 / 稳定 / 最新",
+          "default": "0.1",
+          "select": [
+            { "text": "保守 (0.1) - 仅接收同小版本 bug 修复", "value": "0.1", "default": true },
+            { "text": "稳定 (0) - 接收所有 0.x 小版本更新", "value": "0" },
+            { "text": "最新 (latest) - 总是拉取最新发布版本", "value": "latest" }
+          ]
+        },
+        {
+          "name": "DATA_ROOT",
+          "label": "数据目录",
+          "description": "所有有状态数据（数据库 / 上传 / 备份 / 证书）存放路径。安装脚本默认创建 /opt/bangnicms/data。如需搬迁请同步 mv 整个目录后修改此值。",
+          "default": "/opt/bangnicms/data"
+        },
+        {
+          "name": "API_VERSION_SEGMENT",
+          "label": "API 版本段",
+          "description": "API 路径中的版本号段，与服务端约定保持一致。除非你知道在做什么，请保持默认。",
+          "default": "2026-04"
+        },
+        {
+          "name": "BANGNICMS_SITE_NAME",
+          "label": "站点名称",
+          "description": "用于站点 meta、邮件签名等默认显示。后台可随时修改。",
+          "default": "BangNiCMS"
+        },
+        {
+          "name": "BANGNICMS_DEFAULT_LANGUAGE_CODE",
+          "label": "默认语言",
+          "description": "首次启动时初始化的内容语言；可在后台 i18n 配置中调整。",
+          "default": "zh-CN",
+          "select": [
+            { "text": "简体中文", "value": "zh-CN", "default": true },
+            { "text": "English", "value": "en" }
+          ]
+        },
+        {
+          "name": "PORTAINER_URL",
+          "label": "Portainer 访问 URL（在线升级用）",
+          "description": "当前 Portainer 控制台 URL（容器内可访问形式）。如不使用在线升级可留空。",
+          "default": "https://portainer:9443"
+        },
+        {
+          "name": "PORTAINER_API_KEY",
+          "label": "Portainer API Token（在线升级用）",
+          "description": "在 Portainer 右上角头像 → 我的账户 → Access Tokens 生成。BangNiCMS 后台『系统 → 在线升级』需要此 Token。如不使用在线升级可留空。",
+          "default": ""
+        },
+        {
+          "name": "PORTAINER_STACK_ID",
+          "label": "[自动填充] Stack ID",
+          "description": "服务器启动后会通过 Portainer API 自动发现并写入数据库，初次部署留空即可。",
+          "default": ""
+        },
+        {
+          "name": "PORTAINER_ENDPOINT_ID",
+          "label": "[自动填充] Endpoint ID",
+          "description": "服务器启动后自动发现，初次部署使用默认 1 即可。",
+          "default": "1"
+        }
+      ]
+    }
+  ]
+}
