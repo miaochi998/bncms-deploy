@@ -121,6 +121,10 @@ ufw --force enable >/dev/null
 # ============================================================
 log "创建数据目录 /opt/bangnicms/data ..."
 mkdir -p /opt/bangnicms/data/{postgres,redis,storage,caddy/data,caddy/config,caddy/logs}
+# server 容器以 uid=1001 (nodejs) 运行，storage 目录必须可写
+chown -R 1001:1001 /opt/bangnicms/data/storage
+# redis 容器以 uid=999 运行
+chown -R 999:999 /opt/bangnicms/data/redis 2>/dev/null || true
 
 # ============================================================
 # 6) 启动 Portainer CE（标准方式，不自动初始化 admin）
