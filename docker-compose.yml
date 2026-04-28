@@ -12,7 +12,7 @@
 #        BANGNICMS_REVALIDATE_SECRET
 #   4. 点 Deploy the stack
 # ------------------------------------------------------------
-# 如需升级到新版本：把所有 ":0.2.6" 改成新版本号即可
+# 如需升级到新版本：把所有 ":0.2.7" 改成新版本号即可
 # ============================================================
 
 services:
@@ -66,7 +66,7 @@ services:
       - bangnicms-internal
 
   server:
-    image: ghcr.io/miaochi998/bangnicms-server:0.2.6
+    image: ghcr.io/miaochi998/bangnicms-server:0.2.7
     container_name: bangnicms-server
     restart: unless-stopped
     depends_on:
@@ -78,8 +78,8 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: production
-      BANGNICMS_APP_VERSION: "0.2.6"
-      BANGNICMS_GIT_SHA: "v0.2.6"
+      BANGNICMS_APP_VERSION: "0.2.7"
+      BANGNICMS_GIT_SHA: "v0.2.7"
       BANGNICMS_BUILD_TIME: "production"
       BANGNICMS_SERVER_PORT: 6530
       BANGNICMS_DATABASE_URL: postgresql://bangnicms:${BANGNICMS_POSTGRES_PASSWORD:?需要填 BANGNICMS_POSTGRES_PASSWORD}@postgres:5432/bangnicms?schema=public
@@ -105,15 +105,15 @@ services:
       - bangnicms-internal
 
   web:
-    image: ghcr.io/miaochi998/bangnicms-web:0.2.6
+    image: ghcr.io/miaochi998/bangnicms-web:0.2.7
     container_name: bangnicms-web
     restart: unless-stopped
     depends_on:
       - server
     environment:
       NODE_ENV: production
-      BANGNICMS_APP_VERSION: "0.2.6"
-      BANGNICMS_GIT_SHA: "v0.2.6"
+      BANGNICMS_APP_VERSION: "0.2.7"
+      BANGNICMS_GIT_SHA: "v0.2.7"
       BANGNICMS_BUILD_TIME: "production"
       BANGNICMS_API_BASE_PATH: /api
       BANGNICMS_API_VERSION_SEGMENT: "2026-04"
@@ -132,15 +132,15 @@ services:
       - bangnicms-internal
 
   admin:
-    image: ghcr.io/miaochi998/bangnicms-admin:0.2.6
+    image: ghcr.io/miaochi998/bangnicms-admin:0.2.7
     container_name: bangnicms-admin
     restart: unless-stopped
     depends_on:
       - server
     environment:
       NODE_ENV: production
-      BANGNICMS_APP_VERSION: "0.2.6"
-      BANGNICMS_GIT_SHA: "v0.2.6"
+      BANGNICMS_APP_VERSION: "0.2.7"
+      BANGNICMS_GIT_SHA: "v0.2.7"
       BANGNICMS_BUILD_TIME: "production"
       BANGNICMS_API_BASE_PATH: /api
       BANGNICMS_API_VERSION_SEGMENT: "2026-04"
