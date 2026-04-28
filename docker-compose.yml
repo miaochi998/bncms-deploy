@@ -16,6 +16,22 @@
 # ============================================================
 
 services:
+  # ────────────────────────────────────────────────────────────
+  # init-permissions（一次性 init 容器）
+  # ────────────────────────────────────────────────────────────
+  # 用 root 权限把 /opt/bangnicms/data/storage 归属改为 UID 1001
+  # （bangnicms-server 容器以 UID 1001 运行，docker 默认创建 bind
+  # mount 目录用 root，会导致 server 启动报 EACCES 并 restart loop）
+  # 跑完即退出（restart: "no"），不占用任何运行时资源。
+  # 自 v0.2.6 起内置，运维不再需要手工 chown。
+  init-permissions:
+    image: busybox:1.37
+    container_name: bangnicms-init-permissions
+    command: ["sh", "-c", "mkdir -p /data/storage /data/storage/plugins && chown -R 1001:1001 /data/storage && echo 'storage permissions OK'"]
+    volumes:
+      - /opt/bangnicms/data/storage:/data/storage
+    restart: "no"
+
   postgres:
     image: postgres:16-alpine
     container_name: bangnicms-postgres
@@ -54,6 +70,8 @@ services:
     container_name: bangnicms-server
     restart: unless-stopped
     depends_on:
+      init-permissions:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
