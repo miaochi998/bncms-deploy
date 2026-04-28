@@ -18,11 +18,11 @@
 #                    pullImage 自动重新部署。无需登录服务器。
 #   方式 B（手动）：在 Portainer Environment variables 区域加一项
 #                    APP_VERSION=0.2.9 → 重新部署堆栈即可。
-#   方式 C（最旧）：把下面的兜底版本号 "0.2.8" 全部改成新版本号。
+#   方式 C（最旧）：把下面的兜底版本号 "0.2.9" 全部改成新版本号。
 #
-# 镜像 tag 已变量化为 ${APP_VERSION:-0.2.8}：
+# 镜像 tag 已变量化为 ${APP_VERSION:-0.2.9}：
 #   - 有 APP_VERSION env 时用它（一键升级时由后端写入）
-#   - 没有时用兜底值 0.2.8（首次部署不用配 APP_VERSION）
+#   - 没有时用兜底值 0.2.9（首次部署不用配 APP_VERSION）
 # ============================================================
 
 services:
@@ -76,7 +76,7 @@ services:
       - bangnicms-internal
 
   server:
-    image: ghcr.io/miaochi998/bangnicms-server:${APP_VERSION:-0.2.8}
+    image: ghcr.io/miaochi998/bangnicms-server:${APP_VERSION:-0.2.9}
     container_name: bangnicms-server
     restart: unless-stopped
     depends_on:
@@ -88,8 +88,8 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: production
-      BANGNICMS_APP_VERSION: "${APP_VERSION:-0.2.8}"
-      BANGNICMS_GIT_SHA: "v${APP_VERSION:-0.2.8}"
+      BANGNICMS_APP_VERSION: "${APP_VERSION:-0.2.9}"
+      BANGNICMS_GIT_SHA: "v${APP_VERSION:-0.2.9}"
       BANGNICMS_BUILD_TIME: "production"
       BANGNICMS_SERVER_PORT: 6530
       BANGNICMS_DATABASE_URL: postgresql://bangnicms:${BANGNICMS_POSTGRES_PASSWORD:?需要填 BANGNICMS_POSTGRES_PASSWORD}@postgres:5432/bangnicms?schema=public
@@ -115,15 +115,15 @@ services:
       - bangnicms-internal
 
   web:
-    image: ghcr.io/miaochi998/bangnicms-web:${APP_VERSION:-0.2.8}
+    image: ghcr.io/miaochi998/bangnicms-web:${APP_VERSION:-0.2.9}
     container_name: bangnicms-web
     restart: unless-stopped
     depends_on:
       - server
     environment:
       NODE_ENV: production
-      BANGNICMS_APP_VERSION: "${APP_VERSION:-0.2.8}"
-      BANGNICMS_GIT_SHA: "v${APP_VERSION:-0.2.8}"
+      BANGNICMS_APP_VERSION: "${APP_VERSION:-0.2.9}"
+      BANGNICMS_GIT_SHA: "v${APP_VERSION:-0.2.9}"
       BANGNICMS_BUILD_TIME: "production"
       BANGNICMS_API_BASE_PATH: /api
       BANGNICMS_API_VERSION_SEGMENT: "2026-04"
@@ -142,15 +142,15 @@ services:
       - bangnicms-internal
 
   admin:
-    image: ghcr.io/miaochi998/bangnicms-admin:${APP_VERSION:-0.2.8}
+    image: ghcr.io/miaochi998/bangnicms-admin:${APP_VERSION:-0.2.9}
     container_name: bangnicms-admin
     restart: unless-stopped
     depends_on:
       - server
     environment:
       NODE_ENV: production
-      BANGNICMS_APP_VERSION: "${APP_VERSION:-0.2.8}"
-      BANGNICMS_GIT_SHA: "v${APP_VERSION:-0.2.8}"
+      BANGNICMS_APP_VERSION: "${APP_VERSION:-0.2.9}"
+      BANGNICMS_GIT_SHA: "v${APP_VERSION:-0.2.9}"
       BANGNICMS_BUILD_TIME: "production"
       BANGNICMS_API_BASE_PATH: /api
       BANGNICMS_API_VERSION_SEGMENT: "2026-04"
